@@ -10,18 +10,18 @@ def configure_client():
     # set client configuration
     configure(api_key=st.secrets['GEMINI_API_KEY'])
     # specify generative ai model
-    client = GenerativeModel('gemini-1.0-pro-latest')
+    client = GenerativeModel('gemini-1.5-pro')
 
     # set client and model in session state
     if 'client' not in st.session_state:
         st.session_state['client'] = client
 
 
-def get_chat_response(session: ChatSession, prompt: str) -> str:
+def get_chat_response(session: ChatSession, prompt: str | list) -> str:
     """
     get the prompt response from the llm
     :param session: chat session
-    :param prompt: prompt of the user
+    :param prompt: user prompt or image to story prompt with image
     :return: llm response
     """
     responses = session.send_message(prompt, stream=True)
@@ -77,6 +77,8 @@ def main():
             
             Provide the images using the file uploader below or just prompt an idea in the text area below!
             
+            > 💡Tip:  
+            > Remove the previous images to enable the toggle
             """
         )
 
@@ -84,6 +86,13 @@ def main():
         images = st.file_uploader(
             label='Upload your image(s) here!', type=['png', 'jpg', 'jpeg'], accept_multiple_files=True
         )
+
+        # convert images into PILLOW Image objects
+        images = [Image.open(image) for image in images]
+
+        # display images to the user if it toggled
+        if st.toggle('Show Images', help='Configure before uploading an image', disabled=images != []):
+            st.image(images, use_column_width=True)
 
     # display chat messages from history on app rerun
     for message in st.session_state.messages:
