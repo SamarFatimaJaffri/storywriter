@@ -10,7 +10,7 @@ def configure_client():
     # set client configuration
     configure(api_key=st.secrets['GEMINI_API_KEY'])
     # specify generative ai model
-    client = GenerativeModel('gemini-1.0-pro-latest')
+    client = GenerativeModel('gemini-1.5-pro')
 
     # set client and model in session state
     if 'client' not in st.session_state:
@@ -30,6 +30,15 @@ def get_chat_response(chat: ChatSession, prompt: str) -> str:
     text_response = [chunk.text for chunk in responses]
 
     return ''.join(text_response)
+
+
+def process_images(images):
+    """
+    convert images into PILLOW Image objects
+    :param images: path to images
+    :return: list of PIL Image objects
+    """
+    return [Image.open(image) for image in images]
 
 
 def main():
@@ -63,6 +72,14 @@ def main():
             label='Upload your image(s) here!', type=['png', 'jpg', 'jpeg'], accept_multiple_files=True
         )
 
+        # display images to the user if it toggled
+        show = st.toggle('Show Images')
+
+        imgs = process_images(images)
+        if show:
+            show_imgs = lambda img: st.image(img, caption='Story Image', use_column_width=True)
+            list(map(show_imgs, imgs))
+
     # display chat messages from history on app rerun
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
@@ -70,8 +87,12 @@ def main():
 
     chat = st.session_state['client'].start_chat()
 
+    # TODO: add functionality to process multiple images at once
+    # write a prompt for generating story based on images if present
+    prompt = [imgs[0], 'Write a beautiful story based on provided image'] if imgs else None
+
     # react to user input
-    if prompt := st.chat_input('Share some thoughts about your story...'):
+    if prompt := st.chat_input('Share some thoughts about your story...') or prompt:
         # display user message in chat message container
         with st.chat_message('user'):
             st.markdown(prompt)
