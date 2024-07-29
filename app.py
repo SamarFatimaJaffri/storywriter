@@ -1,3 +1,5 @@
+import logging
+
 import streamlit as st
 from google.generativeai import ChatSession, GenerativeModel, configure
 from PIL import Image
@@ -7,6 +9,8 @@ def configure_client():
     """
     configure the llm settings
     """
+    logging.info('Setting client configuration')
+
     # set client configuration
     configure(api_key=st.secrets['GEMINI_API_KEY'])
     # specify generative ai model
@@ -15,6 +19,8 @@ def configure_client():
     # set client and model in session state
     if 'client' not in st.session_state:
         st.session_state['client'] = client
+
+    logging.info('Client configuration loaded')
 
 
 def get_chat_response(session: ChatSession, prompt: str | list) -> str:
@@ -38,19 +44,20 @@ def chat(session: ChatSession, prompt: str | list):
     """
     # display user message in chat message container
     with st.chat_message('user'):
-        st.markdown(prompt if prompt is str else prompt[1])
+        _prompt = prompt if prompt is str else prompt[1]
+        st.markdown(_prompt)
 
     # add user message to chat history
-    st.session_state.messages.append({'role': 'user', 'content': prompt})
+    st.session_state.messages.append({'role': 'user', 'content': _prompt})
 
     # display assistant response in chat message container
     with st.chat_message('assistant'):
         # [BUGFIX]: directly getting response will return full object; get_chat_response() is to fix it
         stream = get_chat_response(session, prompt)
-        response = st.write(stream)
+        st.write(stream)
 
     # add assistant response to chat history
-    st.session_state.messages.append({'role': 'assistant', 'content': response})
+    st.session_state.messages.append({'role': 'assistant', 'content': stream})
 
 
 def main():
@@ -99,7 +106,9 @@ def main():
         with st.chat_message(message['role']):
             st.markdown(message['content'])
 
+    logging.info('Starting chat session...')
     session = st.session_state['client'].start_chat()
+    logging.info('Chat session started!')
 
     # write a prompt for generating story based on images if present
     if images:
