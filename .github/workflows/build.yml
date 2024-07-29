@@ -27,7 +27,7 @@ jobs:
         pip install pylint
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint *.py
   isort:
     needs: [build]
     runs-on: ubuntu-latest
@@ -37,4 +37,4 @@ jobs:
         pip install isort
     - name: Analysing the code with isort
       run: |
-        isort $(git ls-files '*.py')
+        isort *.py
