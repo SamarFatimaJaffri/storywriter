@@ -27,7 +27,7 @@ jobs:
         pip install pylint
     - name: Analysing the code with pylint
       run: |
-        pylint '**.py'
+        pylint **.py
   isort:
     needs: [build]
     runs-on: ubuntu-latest
