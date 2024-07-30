@@ -21,9 +21,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         # install linting and import sorting libraries
-        pip install pylint
         pip install isort
-    - name: Analysing the code with pylint
-      run: pylint $(git ls-files '*.py')
+        pip install flake8
     - name: Analysing the code with isort
       run: isort $(git ls-files '*.py')
+    - name: Analysing the code with Flake8
+      run: flake8 $(git ls-files '*.py')
