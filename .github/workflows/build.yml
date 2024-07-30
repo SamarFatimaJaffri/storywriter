@@ -26,4 +26,4 @@ jobs:
     - name: Analysing the code with isort
       run: isort $(git ls-files '*.py')
     - name: Analysing the code with Flake8
-      run: flake8 $(git ls-files '*.py')
+      run: flake8 $(git ls-files '*.py') --line-length=79
