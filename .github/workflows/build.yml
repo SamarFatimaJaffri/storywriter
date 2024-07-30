@@ -11,7 +11,7 @@ jobs:
     steps:
     - name: Install latest git
       run: |
-        apt-get install git
+        sudo apt-get install git
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
