@@ -9,11 +9,15 @@ jobs:
       matrix:
         python-version: ["3.10"]
     steps:
-    - name: Install latest git
+    - name: Install git in container
       run: |
+        sudo apt-get update
         sudo apt-get install git
+        # one-time fix to avoid permission problems later on
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
