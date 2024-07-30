@@ -9,12 +9,6 @@ jobs:
       matrix:
         python-version: ["3.10"]
     steps:
-    - name: Install git in container
-      run: |
-        sudo apt-get update
-        sudo apt-get install git
-        # one-time fix to avoid permission problems later on
-        git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -26,25 +20,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-  pylint:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Linting
-      run: |
+        # install linting and import sorting libraries
         pip install pylint
-    - name: Analysing the code with pylint
-      run: |
-        pylint $(git ls-files '*.py')
-  isort:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Sort Imports
-      run: |
         pip install isort
+    - name: Analysing the code with pylint
+      run: pylint $(git ls-files '*.py')
     - name: Analysing the code with isort
-      run: |
-        isort $(git ls-files '*.py')
+      run: isort $(git ls-files '*.py')
