@@ -30,6 +30,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Linting
       run: |
         pip install pylint
@@ -40,6 +41,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Sort Imports
       run: |
         pip install isort
