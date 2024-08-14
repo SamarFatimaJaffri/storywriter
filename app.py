@@ -1,91 +1,10 @@
 import logging
 
 import streamlit as st
-from google.generativeai import ChatSession, GenerativeModel, configure
 from PIL import Image
 
-
-def add_variable(variable, value):
-    """
-    add session variables
-    :param variable: name of the variable
-    :param value: (initial) value of the variable
-    """
-    if variable not in st.session_state:
-        st.session_state[variable] = value
-
-
-def set_session_state():
-    """
-    set session state variables
-    """
-    logging.info('Setting session variables')
-    # initialize chat history
-    add_variable('messages', [])
-
-    # add session variables to store images and toggle value to session
-    add_variable('images', [])
-    add_variable('toggle', False)
-    logging.info('Session variables loaded')
-
-
-def configure_client():
-    """
-    configure the llm settings
-    """
-    logging.info('Setting client configuration')
-
-    # set client configuration
-    configure(api_key=st.secrets['GEMINI_API_KEY'])
-    # specify generative ai model
-    client = GenerativeModel('gemini-1.5-pro')
-
-    # set client and model in session state
-    add_variable('client', client)
-    logging.info('Client configuration loaded')
-
-
-def get_chat_response(session: ChatSession, prompt: str | list) -> str:
-    """
-    get the prompt response from the llm
-    :param session: chat session
-    :param prompt: user prompt or image to story prompt with image
-    :return: llm response
-    """
-    responses = session.send_message(prompt, stream=True)
-
-    return ''.join([chunk.text for chunk in responses])
-
-
-def chat(session: ChatSession, prompt: str | list):
-    """
-    chat with the bot
-    :param session: chat session
-    :param prompt: user prompt or image to story prompt with image
-    :return: None
-    """
-    # display user message in chat message container
-    with st.chat_message('user'):
-        img, _prompt = (None, prompt) if isinstance(prompt, str) else prompt
-        st.markdown(_prompt)
-
-        # display images to the user if it toggled
-        if img and st.session_state.toggle:
-            st.image(img, width=300)
-
-    # add user message to chat history
-    st.session_state.messages.append({
-        'role': 'user', 'content': _prompt, 'img': img if st.session_state.toggle else None
-    })
-
-    # display assistant response in chat message container
-    with st.chat_message('assistant'):
-        # [BUGFIX]: directly getting response will return full object; get_chat_response() is to fix it
-        stream = get_chat_response(session, prompt)
-        st.write(stream)
-
-    # add assistant response to chat history
-    st.session_state.messages.append({'role': 'assistant', 'content': stream})
+from chatbot import chat
+from configuration import configure_client, set_session_state
 
 
 @st.dialog('Upload your images')
@@ -106,7 +25,7 @@ def upload_images():
         st.rerun()
 
 
-def main():
+def startup():
     st.title('Story Writer')
     st.subheader('Turn your beautiful images into well crafted stories!')
 
@@ -115,22 +34,24 @@ def main():
         st.markdown(
             """
             Hi there 👋
-            
+
             My self Story Writer. I am a bot 🤖 who can convert your beautiful images (illustrations, drawings, 
             paintings) into well crafted stories.
-            
+
             I can incorporate the images that you provides into the story, or generate the story based on images ✨
-            
+
             If you don't have images, don't worry.  
             I can also can write stories for you based on your prompts.
-            
+
             Provide the images by calling image dialog or just prompt an idea in the text area below!
-            
+
             > 💡Tip:  
             > Call image dialog using `\images` command.
             """
         )
 
+
+def main():
     # display chat messages from history on app rerun
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
@@ -164,4 +85,5 @@ if __name__ == '__main__':
     configure_client()
     set_session_state()
 
+    startup()
     main()
