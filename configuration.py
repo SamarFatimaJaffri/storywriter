@@ -34,17 +34,24 @@ class Configuration:
         self._add_variable('toggle', False)
         logging.info('Session variables loaded')
 
-    def configure_client(self):
+        # set session state flag to true
+        self.session_state_set = True
+
+    def configure_client(self, gemini_api_key):
         """
         configure the llm settings
         """
         logging.info('Setting client configuration')
 
         # set client configuration
-        configure(api_key=st.secrets['GEMINI_API_KEY'])
+        configure(api_key=gemini_api_key)
         # specify generative ai model
         client = GenerativeModel('gemini-1.5-pro')
 
         # set client and model in session state
         self._add_variable('client', client)
         logging.info('Client configuration loaded')
+
+        # set config flag to true
+        if gemini_api_key:
+            self.client_configured = True

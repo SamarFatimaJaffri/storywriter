@@ -39,7 +39,6 @@ class ChatBot:
 
         # display assistant response in chat message container
         with st.chat_message('assistant'):
-            # [BUGFIX]: directly getting response will return full object; get_chat_response() is to fix it
             stream = self.get_chat_response(prompt)
             st.write(stream)
 

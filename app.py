@@ -35,6 +35,21 @@ class StoryWriter:
         st.title('Story Writer')
         st.subheader('Turn your beautiful images into well crafted stories!')
 
+        # set client provider
+        with st.popover('Set API Key', help='Specify your Gemini API Key'):
+            gemini_api_key = st.text_input(
+                'Gemini API Key', placeholder='YOUR-GEMINI-API-KEY-HERE', type='password'
+            )
+
+            st.page_link(
+                label='Get Gemini Key', page='https://aistudio.google.com/app/apikey',
+                help='Get Gemini API Key from the official site'
+            )
+
+            # set client and session configuration
+            self.config.configure_client(gemini_api_key)
+            self.config.set_session_state()
+
         with st.chat_message('assistant'):
             # bot initial message
             st.markdown(
@@ -70,6 +85,11 @@ class StoryWriter:
 
         # react to user input
         if prompt := st.chat_input('Share some thoughts about your story...'):
+            # ask for API key if not set
+            if not self.config.client_configured:
+                st.info("Please add your Gemini API key to continue.")
+                st.stop()
+
             if prompt == '\\images':
                 upload_images()
             else:
@@ -87,10 +107,6 @@ class StoryWriter:
 
 if __name__ == '__main__':
     app = StoryWriter()
-
-    # set client and session configuration
-    app.config.configure_client()
-    app.config.set_session_state()
 
     app.startup()
     app.main()
