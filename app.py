@@ -3,8 +3,8 @@ import logging
 import streamlit as st
 from PIL import Image
 
-from chatbot import chat
-from configuration import configure_client, set_session_state
+from chatbot import ChatBot
+from configuration import Configuration
 
 
 @st.dialog('Upload your images')
@@ -25,65 +25,72 @@ def upload_images():
         st.rerun()
 
 
-def startup():
-    st.title('Story Writer')
-    st.subheader('Turn your beautiful images into well crafted stories!')
+class StoryWriter:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
-    with st.chat_message('assistant'):
-        # bot initial message
-        st.markdown(
-            """
-            Hi there 👋
+        self.config = Configuration()
 
-            My self Story Writer. I am a bot 🤖 who can convert your beautiful images (illustrations, drawings, 
-            paintings) into well crafted stories.
+    def startup(self):
+        st.title('Story Writer')
+        st.subheader('Turn your beautiful images into well crafted stories!')
 
-            I can incorporate the images that you provides into the story, or generate the story based on images ✨
+        with st.chat_message('assistant'):
+            # bot initial message
+            st.markdown(
+                """
+                Hi there 👋
 
-            If you don't have images, don't worry.  
-            I can also can write stories for you based on your prompts.
+                My self Story Writer. I am a bot 🤖 who can convert your beautiful images (illustrations, drawings, 
+                paintings) into well crafted stories.
 
-            Provide the images by calling image dialog or just prompt an idea in the text area below!
+                I can incorporate the images that you provides into the story, or generate the story based on images ✨
 
-            > 💡Tip:  
-            > Call image dialog using `\images` command.
-            """
-        )
+                If you don't have images, don't worry.  
+                I can also can write stories for you based on your prompts.
 
+                Provide the images by calling image dialog or just prompt an idea in the text area below!
 
-def main():
-    # display chat messages from history on app rerun
-    for message in st.session_state.messages:
-        with st.chat_message(message['role']):
-            st.markdown(message['content'])
-            if message.get('img', None):
-                st.image(message['img'], width=300)
+                > 💡Tip:  
+                > Call image dialog using `\images` command.
+                """
+            )
 
-    logging.info('Starting chat session...')
-    session = st.session_state['client'].start_chat()
-    logging.info('Chat session started!')
+    def main(self):
+        # display chat messages from history on app rerun
+        for message in st.session_state.messages:
+            with st.chat_message(message['role']):
+                st.markdown(message['content'])
+                if message.get('img', None):
+                    st.image(message['img'], width=300)
 
-    # react to user input
-    if prompt := st.chat_input('Share some thoughts about your story...'):
-        if prompt == '\\images':
-            upload_images()
-        else:
-            chat(session, prompt)
-    elif st.session_state.images:
-        # convert images into PILLOW Image objects
-        images = [Image.open(image) for image in st.session_state.images]
-        logging.info('Images uploaded!')
+        self.logger.info('Starting chat session...')
+        chatbot = ChatBot()
+        self.logger.info('Chat session started!')
 
-        # write a prompt for generating story based on images if present
-        if images:
-            # TODO: add functionality to process multiple images at once
-            chat(session, [images[0], 'Write a beautiful story based on provided image'])
+        # react to user input
+        if prompt := st.chat_input('Share some thoughts about your story...'):
+            if prompt == '\\images':
+                upload_images()
+            else:
+                chatbot.chat(prompt)
+        elif st.session_state.images:
+            # convert images into PILLOW Image objects
+            images = [Image.open(image) for image in st.session_state.images]
+            self.logger.info('Images uploaded!')
+
+            # write a prompt for generating story based on images if present
+            if images:
+                # TODO: add functionality to process multiple images at once
+                chatbot.chat([images[0], 'Write a beautiful story based on provided image'])
 
 
 if __name__ == '__main__':
-    # set client and session configuration
-    configure_client()
-    set_session_state()
+    app = StoryWriter()
 
-    startup()
-    main()
+    # set client and session configuration
+    app.config.configure_client()
+    app.config.set_session_state()
+
+    app.startup()
+    app.main()
