@@ -3,8 +3,8 @@ import logging
 import streamlit as st
 from PIL import Image
 
-from chatbot import chat
-from configuration import configure_client, set_session_state
+from chatbot import ChatBot
+from configuration import Configuration
 
 
 @st.dialog('Upload your images')
@@ -25,65 +25,88 @@ def upload_images():
         st.rerun()
 
 
-def startup():
-    st.title('Story Writer')
-    st.subheader('Turn your beautiful images into well crafted stories!')
+class StoryWriter:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
-    with st.chat_message('assistant'):
-        # bot initial message
-        st.markdown(
-            """
-            Hi there 👋
+        self.config = Configuration()
 
-            My self Story Writer. I am a bot 🤖 who can convert your beautiful images (illustrations, drawings, 
-            paintings) into well crafted stories.
+    def startup(self):
+        st.title('Story Writer')
+        st.subheader('Turn your beautiful images into well crafted stories!')
 
-            I can incorporate the images that you provides into the story, or generate the story based on images ✨
+        # set client provider
+        with st.popover('Set API Key', help='Specify your Gemini API Key'):
+            gemini_api_key = st.text_input(
+                'Gemini API Key', placeholder='YOUR-GEMINI-API-KEY-HERE', type='password'
+            )
 
-            If you don't have images, don't worry.  
-            I can also can write stories for you based on your prompts.
+            st.page_link(
+                label='Get Gemini Key', page='https://aistudio.google.com/app/apikey',
+                help='Get Gemini API Key from the official site'
+            )
 
-            Provide the images by calling image dialog or just prompt an idea in the text area below!
+            # set client and session configuration
+            self.config.configure_client(gemini_api_key)
+            self.config.set_session_state()
 
-            > 💡Tip:  
-            > Call image dialog using `\images` command.
-            """
-        )
+        with st.chat_message('assistant'):
+            # bot initial message
+            st.markdown(
+                """
+                Hi there 👋
 
+                My self Story Writer. I am a bot 🤖 who can convert your beautiful images (illustrations, drawings, 
+                paintings) into well crafted stories.
 
-def main():
-    # display chat messages from history on app rerun
-    for message in st.session_state.messages:
-        with st.chat_message(message['role']):
-            st.markdown(message['content'])
-            if message.get('img', None):
-                st.image(message['img'], width=300)
+                I can incorporate the images that you provides into the story, or generate the story based on images ✨
 
-    logging.info('Starting chat session...')
-    session = st.session_state['client'].start_chat()
-    logging.info('Chat session started!')
+                If you don't have images, don't worry.  
+                I can also can write stories for you based on your prompts.
 
-    # react to user input
-    if prompt := st.chat_input('Share some thoughts about your story...'):
-        if prompt == '\\images':
-            upload_images()
-        else:
-            chat(session, prompt)
-    elif st.session_state.images:
-        # convert images into PILLOW Image objects
-        images = [Image.open(image) for image in st.session_state.images]
-        logging.info('Images uploaded!')
+                Provide the images by calling image dialog or just prompt an idea in the text area below!
 
-        # write a prompt for generating story based on images if present
-        if images:
-            # TODO: add functionality to process multiple images at once
-            chat(session, [images[0], 'Write a beautiful story based on provided image'])
+                > 💡Tip:  
+                > Call image dialog using `\images` command.
+                """
+            )
+
+    def main(self):
+        # display chat messages from history on app rerun
+        for message in st.session_state.messages:
+            with st.chat_message(message['role']):
+                st.markdown(message['content'])
+                if message.get('img', None):
+                    st.image(message['img'], width=300)
+
+        self.logger.info('Starting chat session...')
+        chatbot = ChatBot()
+        self.logger.info('Chat session started!')
+
+        # react to user input
+        if prompt := st.chat_input('Share some thoughts about your story...'):
+            # ask for API key if not set
+            if not self.config.client_configured:
+                st.info("Please add your Gemini API key to continue.")
+                st.stop()
+
+            if prompt == '\\images':
+                upload_images()
+            else:
+                chatbot.chat(prompt)
+        elif st.session_state.images:
+            # convert images into PILLOW Image objects
+            images = [Image.open(image) for image in st.session_state.images]
+            self.logger.info('Images uploaded!')
+
+            # write a prompt for generating story based on images if present
+            if images:
+                # TODO: add functionality to process multiple images at once
+                chatbot.chat([images[0], 'Write a beautiful story based on provided image'])
 
 
 if __name__ == '__main__':
-    # set client and session configuration
-    configure_client()
-    set_session_state()
+    app = StoryWriter()
 
-    startup()
-    main()
+    app.startup()
+    app.main()
